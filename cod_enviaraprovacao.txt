@@ -1,0 +1,112 @@
+Private Sub ENVIA_APROVACAO()
+Dim SapGuiAuto, application, connection, session, WScript
+
+If Not IsObject(application) Then
+   Set SapGuiAuto = GetObject("SAPGUI")
+   Set application = SapGuiAuto.GetScriptingEngine
+End If
+If Not IsObject(connection) Then
+   Set connection = application.Children(0)
+End If
+If Not IsObject(session) Then
+   Set session = connection.Children(0)
+End If
+If IsObject(WScript) Then
+   WScript.ConnectObject session, "on"
+   WScript.ConnectObject application, "on"
+End If
+
+
+Dim objExcel
+
+Dim objSheet, intRow, i
+
+Set objExcel = GetObject(p1_2, "Excel.application")
+Set objSheet = SAP
+
+
+'--------------------------------------------------------------
+'--|BLOCO DE ACESSO A YSLIB_PAG  E ORGANIZAÇÃO DE DOCUMENTOS|--
+'--------------------------------------------------------------
+
+'ACESSA A YS_LIBPAG
+session.findById("wnd[0]/tbar[0]/okcd").Text = "YSLIB_PAG"
+session.findById("wnd[0]").sendVKey 0
+
+'SELECIONA A COLUNA DOCUMENTO
+session.findById("wnd[0]/usr/tblSAPMYSLIB_PAGTC_DOC").Columns.elementAt(1).Selected = True
+
+'ORGANIZA DO MENOR PARA O MAIOR
+session.findById("wnd[0]/tbar[1]/btn[18]").press
+
+'DESELECIONA A COLUNA DOCUMENTO
+session.findById("wnd[0]/usr/tblSAPMYSLIB_PAGTC_DOC").Columns.elementAt(1).Selected = False
+
+
+'--------------------------------------------------------------
+'--|BLOCO DE INSERÇÃO DE COMENTÁRIO E ENVIO PARA LIBERAÇÃO|--
+'--------------------------------------------------------------
+
+'*******INICIAR LOOP FOR / NEXT************'
+For i = 2 To Sheets("SAP").UsedRange.Rows.Count
+
+frmpgto = Sheets("SAP").Range("e" & i).Value
+
+Sheets("SAP").Range("M" & i).Select
+Sheets("SAP").Range("M" & i).Copy
+
+
+                    'SELECIONA A LINHA
+                    session.findById("wnd[0]/usr/tblSAPMYSLIB_PAGTC_DOC").getAbsoluteRow(0).Selected = True
+                    
+                    'ACIONAR BOTÃO INSERIR COMENTARIO
+                    session.findById("wnd[0]/tbar[1]/btn[9]").press
+                    
+                    'COLA O COMENTARIO
+                    session.findById("wnd[0]/tbar[1]/btn[9]").press
+                    
+                    'ACIONAR O BOTAO SALVAR
+                    session.findById("wnd[0]/tbar[0]/btn[11]").press
+                    
+                    'CLICA NO BOTAO VOLTAR
+                    session.findById("wnd[0]/tbar[0]/btn[3]").press
+                    
+                    'DA OK NA MENSAGEM DE SALVAR COMENTARIO
+                    session.findById("wnd[1]/usr/btnBUTTON_1").press
+                    
+                    'DA OK NA TELA DE INFORMACAO
+                    session.findById("wnd[1]/tbar[0]/btn[0]").press
+                    
+                    'ACIONA O BOTÃO ENCAMINHAR
+                    session.findById("wnd[0]/usr/btnBT_PROC").press
+                    
+                    
+                 If frmpgto <> "Q" Then     'verifica a forma de pagamento (se "q", adiona os comentarios)
+                                  
+                    
+                    'APERTA O BOTAO SIM
+                    session.findById("wnd[1]/usr/btnBUTTON_1").press
+                    
+                    'DA OK NA TELA DE INFORMAÇÃO
+                    session.findById("wnd[1]/tbar[0]/btn[0]").press
+                
+                
+                Else
+
+                    session.findById("wnd[1]/usr/btnBUTTON_1").press
+                    session.findById("wnd[1]/tbar[0]/btn[0]").press
+                    session.findById("wnd[1]/usr/sub:SAPLSPO4:0300/txtSVALD-VALUE[0,21]").Text = "Quitação TED BRADESCO"
+                    session.findById("wnd[1]/tbar[0]/btn[0]").press
+                    session.findById("wnd[1]/tbar[0]/btn[0]").press
+                
+                End If
+                
+
+Next i
+
+          
+MsgBox "Associações Concluídas!"
+'*******FINALIZAR LOOP FOR / NEXT************'
+
+End Sub
+

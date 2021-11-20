@@ -1,0 +1,176 @@
+Sub cadastrar()
+
+'CONEXÃO COM O SAP
+''-------------------------------------------------------------------''
+Dim SapGuiAuto, application, connection, session, WScript
+
+If Not IsObject(Appl) Then
+   Set SapGuiAuto = GetObject("SAPGUI")
+   Set Appl = SapGuiAuto.GetScriptingEngine
+End If
+
+If Not IsObject(connection) Then
+   Set connection = Appl.Children(0)
+End If
+
+If Not IsObject(session) Then
+   Set session = connection.Children(0)
+End If
+
+If IsObject(WScript) Then
+   WScript.ConnectObject session, "on"
+   WScript.ConnectObject Appl, "on"
+End If
+
+''-------------------------------------------------------------------''
+
+'CONEXÃO COM A PLANILHA SAP
+
+Rem  B1
+
+Dim objExcel
+Dim objSheet, intRow, i, doccontab
+
+Set objExcel = GetObject(p1, "Excel.application")
+Set objSheet = SAP
+
+''-------------------------------------------------------------------''
+
+'LANÇAMENTOS NO SAP
+
+
+For i = 5 To objSheet.UsedRange.Rows.Count                            'INICIO DO LOOP
+
+
+'referencias de localização dos dados na plan SAP
+''-------------------------------------------------------------------''
+    fornecedor = Trim(CStr(objSheet.Cells(i, 1).Value))
+    
+    referencia = Trim(CStr(objSheet.Cells(i, 2).Value))
+    
+    MONTANTE = Trim(CStr(objSheet.Cells(i, 3).Value))
+    
+    vencimento = Trim(CStr(objSheet.Cells(i, 4).Value))
+    
+    FORMAPGT = Trim(CStr(objSheet.Cells(i, 5).Value))
+    
+    CONTARAZAO = Trim(CStr(objSheet.Cells(i, 7).Value))
+    
+    ATRIBUICAO = Trim(CStr(objSheet.Cells(i, 8).Value))
+    
+    texto = Trim(CStr(objSheet.Cells(i, 9).Value))
+    
+    ccusto = Trim(CStr(objSheet.Cells(i, 10).Value))
+    
+    clucro = Trim(CStr(objSheet.Cells(i, 11).Value))
+    
+    ordem = Trim(CStr(objSheet.Cells(i, 12).Value))
+    
+    RESPOSTA = Trim(CStr(objSheet.Cells(i, 16).Value))
+
+'doccontab = session.findById("wnd[0]/sbar").Text
+
+''-------------------------------------------------------------------''
+
+Rem B1
+
+
+'BLOCO DE VERIFICAÇÃO DOS DADOS, ANTES DO EFETIVO LANÇAMENTO
+''-------------------------------------------------------------------''
+        
+        'Pede para informar o cod do fornecedor, caso não tenha sido importado. Se não foi importado virá com erro de não disponivel (#n/d)
+         Select Case fornecedor
+         Case "0"
+         objSheet.Cells(i, 1).Select
+         fornecedor = InputBox("O Fornecedor da" & " TAREFA ID: " & objSheet.Cells(i, 2) & " não foi localizado, favor preencher manualmente!", "ID PAGAMENTO ELAW:" & " " & objSheet.Cells(i, 2))
+         objSheet.Cells(i, 1).Value = fornecedor
+         End Select
+         
+         'Pede para informar o cod do CENTRO DE CUSTOS, caso não tenha sido importado
+         Select Case ccusto
+         Case "VERIFICAR"
+         objSheet.Cells(i, 1).Select
+         ccusto = InputBox("O Centro de Custos da" & " TAREFA ID: " & objSheet.Cells(i, 2) & " não foi localizado, favor preencher manualmente!", "ID PAGAMENTO ELAW:" & " " & objSheet.Cells(i, 2))
+         objSheet.Cells(i, 10).Value = ccusto
+         End Select
+         
+        'Pede para informar o cod do CENTRO DE CUSTOS, caso não tenha sido importado
+         Select Case clucro
+         Case "VERIFICAR"
+         objSheet.Cells(i, 11).Select
+         clucro = InputBox("O Centro de Lucro da" & " TAREFA ID: " & objSheet.Cells(i, 2) & " não foi localizado, favor preencher manualmente!", "ID PAGAMENTO ELAW:" & " " & objSheet.Cells(i, 2))
+         objSheet.Cells(i, 11).Value = clucro
+         End Select
+               
+
+    'Verifica se o lançamento da linha em referência já foi feito
+    If RESPOSTA = "sim" Then
+            
+        objSheet.Cells(i, 16).Value = "sim"
+    Else
+        objSheet.Cells(i, 16).Value = "não"
+                                
+                                                        
+                        'Preenche o cabeçalho - ABA DADOS BÁSICOS
+                        session.findById("wnd[0]/usr/tabsTS/tabpMAIN/ssubPAGE:SAPLFDCB:0010/ctxtINVFO-ACCNT").Text = fornecedor
+                        session.findById("wnd[0]/usr/tabsTS/tabpMAIN/ssubPAGE:SAPLFDCB:0010/txtINVFO-XBLNR").Text = referencia
+                        session.findById("wnd[0]/usr/tabsTS/tabpMAIN/ssubPAGE:SAPLFDCB:0010/cmbINVFO-BLART").Key = "TR"
+                        session.findById("wnd[0]/usr/tabsTS/tabpMAIN/ssubPAGE:SAPLFDCB:0010/txtINVFO-WRBTR").Text = MONTANTE
+                        session.findById("wnd[0]/usr/tabsTS/tabpMAIN/ssubPAGE:SAPLFDCB:0010/ctxtINVFO-BUPLA").Text = "5001"
+                        session.findById("wnd[0]/usr/tabsTS/tabpMAIN/ssubPAGE:SAPLFDCB:0010/ctxtINVFO-SGTXT").Text = "Quitação"
+                        session.findById("wnd[0]/usr/tabsTS/tabpPAYM").Select
+                        
+                        'Pressionar ENTER pois quando é um desses fornecedores aparece uma tela informativa
+                        Select Case fornecedor
+                                               
+                        Case 10013504, 10014335
+                        
+                             session.findById("wnd[0]").sendVKey 0      'mensagem informativa - apenas pressionar ENTER
+                             
+                        End Select
+                                            
+                        
+                        session.findById("wnd[0]").sendVKey 0           'mensagem informativa - apenas pressionar ENTER
+                        
+                        
+                        'Preenche o cabeçalho - ABA PAGAMENTO
+                        session.findById("wnd[0]/usr/tabsTS/tabpPAYM/ssubPAGE:SAPLFDCB:0020/ctxtINVFO-ZFBDT").Text = vencimento
+                        session.findById("wnd[0]/usr/tabsTS/tabpPAYM/ssubPAGE:SAPLFDCB:0020/ctxtINVFO-ZTERM").Text = "Z000"
+                        session.findById("wnd[0]/usr/tabsTS/tabpPAYM/ssubPAGE:SAPLFDCB:0020/ctxtINVFO-ZLSCH").Text = FORMAPGT
+                        session.findById("wnd[0]/usr/tabsTS/tabpPAYM/ssubPAGE:SAPLFDCB:0020/ctxtINVFO-BVTYP").Text = "0001"
+                        
+                        
+                        'Realiza os lançamentos contábeis
+                        session.findById("wnd[0]/usr/subITEMS:SAPLFSKB:0100/tblSAPLFSKBTABLE/ctxtACGL_ITEM-HKONT[1,0]").Text = CONTARAZAO
+                        session.findById("wnd[0]/usr/subITEMS:SAPLFSKB:0100/tblSAPLFSKBTABLE/txtACGL_ITEM-WRBTR[4,0]").Text = MONTANTE
+                        session.findById("wnd[0]/usr/subITEMS:SAPLFSKB:0100/tblSAPLFSKBTABLE/txtACGL_ITEM-ZUONR[7,0]").Text = ATRIBUICAO
+                        session.findById("wnd[0]/usr/subITEMS:SAPLFSKB:0100/tblSAPLFSKBTABLE/ctxtACGL_ITEM-SGTXT[8,0]").Text = texto
+                        session.findById("wnd[0]/usr/subITEMS:SAPLFSKB:0100/tblSAPLFSKBTABLE/ctxtACGL_ITEM-KOSTL[11,0]").Text = ccusto
+                        session.findById("wnd[0]/usr/subITEMS:SAPLFSKB:0100/tblSAPLFSKBTABLE/ctxtACGL_ITEM-AUFNR[12,0]").Text = ordem
+                        session.findById("wnd[0]/usr/subITEMS:SAPLFSKB:0100/tblSAPLFSKBTABLE/ctxtACGL_ITEM-PRCTR[14,0]").Text = clucro
+                        
+                        
+                        'Salva o lançamento
+                        session.findById("wnd[0]/tbar[0]/btn[11]").press
+                        
+                        'captura o nº do documento contábil
+                        doccontab = session.findById("wnd[0]/sbar").Text
+                        objSheet.Cells(i, 13).Value = Mid(doccontab, 10, 11)
+                        
+            
+          objSheet.Cells(i, 16).Value = "sim"
+        
+         
+
+    End If
+
+Rem B2 ************************************************
+
+Next
+
+Rem ****************************************************
+           
+MsgBox "Lançamentos Concluídos!"                                'FIM DO LOOP
+
+End Sub
+
