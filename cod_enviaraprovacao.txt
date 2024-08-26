@@ -26,7 +26,7 @@ Set objSheet = SAP
 
 
 '--------------------------------------------------------------
-'--|BLOCO DE ACESSO A YSLIB_PAG  E ORGANIZAÇÃO DE DOCUMENTOS|--
+'--|BLOCO DE ACESSO A YSLIB_PAG E ORGANIZAÇÃO DE DOCUMENTOS|--
 '--------------------------------------------------------------
 
 'ACESSA A YS_LIBPAG
@@ -81,7 +81,7 @@ Sheets("SAP").Range("M" & i).Copy
                     session.findById("wnd[0]/usr/btnBT_PROC").press
                     
                     
-                 If frmpgto <> "Q" Then     'verifica a forma de pagamento (se "q", adiona os comentarios)
+                 If frmpgto <> "Q" Then     'verifica a forma de pagamento (se "q", adiciona os comentarios)
                                   
                     
                     'APERTA O BOTAO SIM
